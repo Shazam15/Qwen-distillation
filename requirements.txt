@@ -1,9 +1,32 @@
+# ---------------------------------------------------------------------------
+# On Windows, run everything inside WSL2 - see docs/WINDOWS_SETUP.md. Native
+# Windows Python is NOT supported: autotrain-advanced pulls in deepspeed/triton,
+# neither of which build reliably outside Linux.
+#
+# Install torch FIRST if this box doesn't already have a CUDA-enabled build -
+# plain `pip install torch` can silently resolve to a CPU-only wheel:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+# Then install the rest of this file.
+# ---------------------------------------------------------------------------
+
 autotrain-advanced==0.8.36
 peft==0.13.2
 bitsandbytes==0.44.1
 accelerate==1.0.1
 datasets==3.0.1
+
+# Used directly by g_evaluate.py / h_merge_lora.py / common.py's NLIScorer.
+# Left unpinned so pip's resolver can match whatever autotrain-advanced 0.8.36
+# already constrains transformers/torch to.
+torch
+transformers
+sentencepiece
+protobuf
+
 langchain-ollama==0.2.0
 httpx==0.27.2
 pandas==2.2.3
 tqdm==4.66.5
+
+# scripts/00_preflight_check.py (RAM check)
+psutil==6.1.0

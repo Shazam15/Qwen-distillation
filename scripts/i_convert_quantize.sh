@@ -29,8 +29,17 @@ if [ ! -x "$LLAMA_CPP_DIR/llama-quantize" ]; then
   cp "$LLAMA_CPP_DIR/build/bin/llama-quantize" "$LLAMA_CPP_DIR/llama-quantize"
 fi
 
+echo "==> Installing convert_hf_to_gguf.py's own Python dependencies"
+CONVERT_REQS="$LLAMA_CPP_DIR/requirements/requirements-convert_hf_to_gguf.txt"
+if [ -f "$CONVERT_REQS" ]; then
+  pip install -r "$CONVERT_REQS"
+else
+  echo "    $CONVERT_REQS not found (llama.cpp restructured?) - falling back to gguf/numpy/sentencepiece"
+  pip install gguf numpy sentencepiece protobuf
+fi
+
 echo "==> Converting $MERGED_MODEL_DIR to f16 GGUF"
-python "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" \
+python3 "$LLAMA_CPP_DIR/convert_hf_to_gguf.py" \
   "$MERGED_MODEL_DIR" \
   --outfile "$GGUF_DIR/${MODEL_NAME}-f16.gguf" \
   --outtype f16

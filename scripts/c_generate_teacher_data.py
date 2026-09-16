@@ -21,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from common import append_jsonl, call_ollama_chat, load_done_ids, read_jsonl, split_thinking
+from prompts_template import SYSTEM_PROMPT
 
 def process_one(record: dict, model: str, num_ctx: int, num_predict: int) -> dict:
     
@@ -37,7 +38,7 @@ def process_one(record: dict, model: str, num_ctx: int, num_predict: int) -> dic
         "id": record["id"],
         "question": record["question"],
         "context_docs": record["context_docs"],
-        "prompt_rendered": record["record_rendered"],
+        "prompt_rendered": record["prompt_rendered"],
         "source": record["source"],
         "lang": record["lang"],
         "teacher_thinking": thinking,
@@ -49,7 +50,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompts", default="../data/raw_prompts/prompts.jsonl")
     parser.add_argument("--out", default="../data/teacher_completions/completions.jsonl")
-    parser.add_argument("--model", default="qwen3.8-flash-next")
+    parser.add_argument(
+        "--model",
+        default="hf.co/bartowski/Qwen3.8-Flash-Next-GGUF:Q4_K_M",
+        help="Ollama tag for the teacher - must match TEACHER_MODEL pulled by a_setup_env.sh",
+    )
     parser.add_argument("--num-ctx", type=int, default=32768)
     parser.add_argument("--num-predict", type=int, default=2048)
     parser.add_argument("--workers", type=int, default=3, help=(
@@ -75,14 +80,14 @@ def main():
             for rec in pending
         }
 
-        for future in tqdm(as_completed(futures), total=len(futures), desvc="Generating"):
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Generating"):
             record = futures[future]
             try:
                 result = future.result()
-            except Exception as exec:
-                print(f"\n[ERROR] {record['id']}: {exec}")
+            except Exception as exc:
+                print(f"\n[ERROR] {record['id']}: {exc}")
                 continue
-        append_jsonl(args.out, result)
+            append_jsonl(args.out, result)
 
 
 if __name__ == "__main__":

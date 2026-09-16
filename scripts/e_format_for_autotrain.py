@@ -27,9 +27,13 @@ from common import read_jsonl
 from prompts_template import SYSTEM_PROMPT
 
 def source_group_key(record: dict) -> str:
-    """Groups by dataset source + question id prefix"""
+    """Groups by dataset source + doc_id, so multiple questions over the same
+    source document (e.g. QASPER's several questions per paper) land on the same
+    side of the train/eval split. Falls back to the record's own id for older
+    prompts.jsonl files written before doc_id existed - each such row is then its
+    own group, same as before."""
 
-    return f"{record['source']}::{record['id'].rsplit('_', 1)[0]}"
+    return f"{record['source']}::{record.get('doc_id', record['id'])}"
 
 def build_messages(record: dict) -> dict:
     thinking = record.get("teacher_thinking", "")
@@ -52,6 +56,7 @@ def main():
     parser.add_argument("--eval-out", default="../data/autotrain_ready/eval.jsonl")
     parser.add_argument("--eval-fraction", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
 
     records = read_jsonl(args.input_path)
 
@@ -75,9 +80,9 @@ def main():
     for path, items in [(args.train_out, train_records), (args.eval_out, eval_records)]:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(build_messages(r), ensure_ascii=False) + "\n")
+            for r in items:
+                f.write(json.dumps(build_messages(r), ensure_ascii=False) + "\n")
 
-    
     print(f"Groups: {len(group_keys)} total, {len(eval_keys)} held out for eval")
     print(f"Train rows: {len(train_records)} -> {args.train_out}")
     print(f"Eval rows: {len(eval_records)} -> {args.eval_out}")
@@ -86,7 +91,7 @@ def main():
     for r in train_records:
         by_source[r["source"]] += 1
 
-    print["Train mix by source:", dict(by_source)]
+    print("Train mix by source:", dict(by_source))
 
 
 if __name__ == "__main__":
