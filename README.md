@@ -3,8 +3,7 @@
 This repo distills Qwen3.8-Flash-Next (teacher) into Qwen3-14B (student), to
 supercharge the smaller Qwen3 model served locally by the academic RAG agent ATLAS
 (PDF-Assistant-RAG) - via Ollama, with no code changes to ATLAS and no recurring API
-costs. See `ATLAS_Distillation_Plan.pdf` (not tracked in this repo) for the full
-rationale; this README and `scripts/` are the implementation of that plan.
+costs.
 
 **Scope**: this repo is separate from ATLAS. It produces a `.gguf` file and an Ollama
 model tag; `k_swap_and_smoketest.sh` is the only script that touches an ATLAS checkout,
